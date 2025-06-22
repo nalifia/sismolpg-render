@@ -1,0 +1,54 @@
+<!-- SIDEBAR -->
+<section id="sidebar">
+    <a href="#" class="brand">
+		<img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" style="width: 50%; max-width: 300px; height: auto; display: block; margin: 0 auto;">
+    </a>
+    <ul class="side-menu top">
+        <li class="{{ 'active' if active_page == 'dashboard' else '' }}">
+            <a href="{{ url_for('dashboard') }}">
+                <i class='bx bxs-dashboard'></i>
+                <span class="text">Dashboard</span>
+            </a>
+        </li>
+        <li class="{{ 'active' if active_page == 'history' else '' }}">
+            <a href="{{ url_for('history') }}">
+                <i class='bx bx-history'></i>
+                <span class="text">Log Activity</span>
+            </a>
+        </li>
+        <li class="{{ 'active' if active_page == 'grafik' else '' }}">
+            <a href="{{ url_for('grafik') }}">
+                <i class='bx bxs-doughnut-chart'></i>
+                <span class="text">Grafik</span>
+            </a>
+        </li>
+
+        <li class="{{ 'active' if active_page == 'about' else '' }}">
+            <a href="{{ url_for('about') }}">
+                <i class='bx bxs-group'></i>
+                <span class="text">About</span>
+            </a>
+        </li>
+    </ul>
+</section>
+<!-- SIDEBAR -->
+
+<!-- CONTENT -->
+<section id="content">
+    <!-- NAVBAR -->
+    <nav>
+        <i class="bx bx-menu toggle-sidebar"></i>
+        <div class="nav-title">
+            <span>Sistem Monitoring Kebocoran Gas</span>
+        </div>
+        <div class="time-display">
+            <span id="current-date"></span>
+            <span id="current-time"></span>
+        </div>
+    </nav>
+    <!-- NAVBAR -->
+     {% block content %}{% endblock %}
+
+    <!-- MAIN CONTENT AKAN MASUK DI SINI -->
+</section>
+<!-- CONTENT -->
