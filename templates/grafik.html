@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}Grafik - Sistem Monitoring Kebocoran Gas{% endblock %}
+
+{% block content %}
+<section id="content">
+    <main>
+        <div class="head-title mb-5">
+            <div class="left">
+                <h1>Grafik Monitoring</h1>
+            </div>
+        </div>
+
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;">
+            <div class="card-chart">
+                <h2>Tren Sensor Gas MQ-2</h2>
+                <canvas id="gasMQ2Chart"></canvas>
+            </div>
+
+            <div class="card-chart">
+                <h2>Tren Sensor Gas MQ-6</h2>
+                <canvas id="gasMQ6Chart"></canvas>
+            </div>
+
+            <div class="card-chart">
+                <h2>Tren Suhu (°C)</h2>
+                <canvas id="tempChart"></canvas>
+            </div>
+
+            <div class="card-chart">
+                <h2>Tren Kelembapan (%)</h2>
+                <canvas id="humidityChart"></canvas>
+            </div>
+
+            <div class="card-chart">
+                <h2>Deteksi Flame</h2>
+                <canvas id="flameChart"></canvas>
+            </div>
+
+            <div class="card-chart">
+                <h2>Distribusi Status Sistem</h2>
+                <canvas id="statusPieChart"></canvas>
+            </div>
+        </div>
+    </main>
+</section>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    /* GENERAL STYLES */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    :root {
+        --blue: #2a85ff;
+        --yellow: #ffad49;
+        --red: #ff6a55;
+        --green: #83bf6e;
+        --dark: #1a2b3c;
+        --grey: #8a94a6;
+        --light: #eef1f5;
+        --white: #ffffff;
+    }
+
+    body {
+        background-color: #eeeeee;
+    };
+
+    a {
+        text-decoration: none;
+    }
+
+    h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+    }
+    .card-chart {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 450px;
+    }
+    canvas {
+        width: 100% !important;
+        height: 350px !important;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+<script>
+let gasMQ2Chart, gasMQ6Chart, tempChart, humidityChart, flameChart, statusPieChart;
+
+async function fetchHistoryData() {
+    try {
+        const response = await fetch('/api/get_history');
+        if (!response.ok) throw new Error('HTTP error ' + response.status);
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+            alert('Data kosong!');
+            return;
+        }
+
+        const dataLimited = data.slice(-50);
+
+        const timestamps = dataLimited.map(item => {
+            const parts = item.timestamp.split('_');
+            return parts[0] + 'T' + parts[1].replace(/-/g, ':'); // 2025-05-26T22:50:50
+        });
+
+        const mq2_ppm = dataLimited.map(item => parseFloat(item.MQ2_PPM || 0));
+        const mq6_ppm = dataLimited.map(item => parseFloat(item.MQ6_PPM || 0));
+        const suhu = dataLimited.map(item => parseFloat(item.Suhu || 0));
+        const kelembapan = dataLimited.map(item => parseFloat(item.Kelembapan || 0));
+        const flame = dataLimited.map(item => parseInt(item.Flame || 0));
+        const status = dataLimited.map(item => (item.Klasifikasi || '').toLowerCase());
+
+        const statusCount = { aman: 0, waspada: 0, bahaya: 0 };
+        status.forEach(s => {
+            if (s.includes('aman')) statusCount.aman += 1;
+            else if (s.includes('waspada')) statusCount.waspada += 1;
+            else if (s.includes('bahaya')) statusCount.bahaya += 1;
+        });
+
+        if (gasMQ2Chart) gasMQ2Chart.destroy();
+        if (gasMQ6Chart) gasMQ6Chart.destroy();
+        if (tempChart) tempChart.destroy();
+        if (humidityChart) humidityChart.destroy();
+        if (flameChart) flameChart.destroy();
+        if (statusPieChart) statusPieChart.destroy();
+
+        const defaultOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'minute',
+                        tooltipFormat: 'dd/MM/yyyy HH:mm:ss',
+                        displayFormats: {
+                            second: 'HH:mm:ss',
+                            minute: 'dd/MM HH:mm',
+                            hour: 'dd/MM HH:mm'
+                        }
+                    },
+
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                },
+                y: {
+                    beginAtZero: false
+                }
+            },
+            elements: {
+                point: {
+                    radius: 5,
+                    hoverRadius: 8,
+                    hoverBackgroundColor: '#fff',
+                    hoverBorderColor: '#000',
+                    hoverBorderWidth: 2
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            }
+        };
+
+        gasMQ2Chart = new Chart(document.getElementById('gasMQ2Chart'), {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'MQ2 PPM',
+                    data: mq2_ppm,
+                    borderColor: '#FF6384',
+                    backgroundColor: 'rgba(255,99,132,0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: defaultOptions
+        });
+
+        gasMQ6Chart = new Chart(document.getElementById('gasMQ6Chart'), {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'MQ6 PPM',
+                    data: mq6_ppm,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54,162,235,0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: defaultOptions
+        });
+
+        tempChart = new Chart(document.getElementById('tempChart'), {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Suhu (°C)',
+                    data: suhu,
+                    borderColor: '#FFCE56',
+                    backgroundColor: 'rgba(255,206,86,0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: defaultOptions
+        });
+
+        humidityChart = new Chart(document.getElementById('humidityChart'), {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Kelembapan (%)',
+                    data: kelembapan,
+                    borderColor: '#4BC0C0',
+                    backgroundColor: 'rgba(75,192,192,0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: defaultOptions
+        });
+
+        const flameCount = { detected: 0, notDetected: 0 };
+        flame.forEach(f => {
+            if (f === 1) flameCount.detected += 1;
+            else flameCount.notDetected += 1;
+        });
+
+        flameChart = new Chart(document.getElementById('flameChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Terjadi Flame', 'Tidak Terjadi'],
+                datasets: [{
+                    data: [flameCount.detected, flameCount.notDetected],
+                    backgroundColor: ['#FF6384', '#CCCCCC'],
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutElastic'
+                }
+            }
+        });
+
+        statusPieChart = new Chart(document.getElementById('statusPieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Aman', 'Waspada', 'Bahaya'],
+                datasets: [{
+                    data: [statusCount.aman, statusCount.waspada, statusCount.bahaya],
+                    backgroundColor: ['#4BC0C0', '#FFCE56', '#FF6384'],
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutElastic'
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+setInterval(fetchHistoryData, 10000); // Update tiap 10 detik
+document.addEventListener('DOMContentLoaded', fetchHistoryData);
+</script>
+{% endblock %}

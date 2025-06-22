@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Link ke file CSS di dalam folder static -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "API_KEY_ANDA",
+            authDomain: "PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "PROJECT_ID",
+            storageBucket: "PROJECT_ID.appspot.com",
+            messagingSenderId: "MESSAGING_SENDER_ID",
+            appId: "APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <title>{% block title %}Sistem Monitoring Kebocoran Gas{% endblock %}</title>
+</head>
+<body class="{{ body_class }}">
+    {% include 'includes/sidebar.html' %}
+
+    <!-- Tanggal & Waktu -->
+    <div style="position: absolute; top: 10px; right: 20px; text-align: right; z-index: 1000;">
+        <div id="tanggal" style="font-size: 14px;"></div>
+        <div id="waktu" style="font-size: 13px; color: gray;"></div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <!-- JS Utama -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <!-- Script Tanggal & Jam -->
+    <script>
+        function updateTanggalDanWaktu() {
+            const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli',
+                           'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const sekarang = new Date();
+            const hariText = hari[sekarang.getDay()];
+            const tanggalText = `${sekarang.getDate()} ${bulan[sekarang.getMonth()]} ${sekarang.getFullYear()}`;
+            const jamText = sekarang.toLocaleTimeString('id-ID');
+
+            document.getElementById('tanggal').textContent = `${hariText}, ${tanggalText}`;
+            document.getElementById('waktu').textContent = jamText;
+        }
+
+        setInterval(updateTanggalDanWaktu, 1000);
+        updateTanggalDanWaktu();
+    </script>
+</body>
+</html>

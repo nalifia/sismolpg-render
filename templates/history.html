@@ -1,0 +1,483 @@
+{% extends 'base.html' %}
+
+{% block title %}Log Activity - Sistem Monitoring Kebocoran Gas{% endblock %}
+
+{% block content %}
+
+    <!-- MAIN -->
+    <section id="content">
+    <main>
+        <div class="head-title">
+            <div class="left">
+                <h1>Log Activity</h1>
+            </div>
+        </div>
+
+        <div class="activity-logs">
+            <div class="log-table-container">
+                <table class="log-table">
+    <thead>
+        <tr>
+            <th>Tanggal dan Waktu</th>
+            <th>MQ 2</th>
+            <th>MQ 6</th>
+            <th>Flame</th>
+            <th>Suhu</th>
+            <th>Kelembapan</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp | datetimeformat }}</td>
+            <td>{{ log.MQ2_PPM }} ppm</td>
+            <td>{{ log.MQ6_PPM }} ppm</td>
+            <td>
+                {% if log.Flame == 1 %}
+                    Terdeteksi
+                {% else %}
+                    Tidak Terdeteksi
+                {% endif %}
+            </td>
+            <td>{{ log.Suhu }} °C</td>
+            <td>{{ log.Kelembapan }} %</td>
+            <td>
+                {% if log.Klasifikasi.lower() == 'aman' %}
+                    <span class="badge safe">Normal</span>
+                {% elif log.Klasifikasi.lower() == 'waspada' %}
+                    <span class="badge warning">Waspada</span>
+                {% else %}
+                    <span class="badge danger">Bahaya</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+    </main>
+    <!-- MAIN -->
+</section>
+<!-- CONTENT -->
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    /* GENERAL STYLES */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    :root {
+        --blue: #2a85ff;
+        --yellow: #ffad49;
+        --red: #ff6a55;
+        --green: #83bf6e;
+        --dark: #1a2b3c;
+        --grey: #8a94a6;
+        --light: #eef1f5;
+        --white: #ffffff;
+    }
+
+    body {
+        background-color: #eeeeee;
+    };
+
+    a {
+        text-decoration: none;
+    }
+
+    /* NAVBAR */
+    .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.5rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        background-color: var(--white);
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 100;
+    }
+
+    .toggle-sidebar {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--dark);
+    }
+
+    .nav-title span {
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .time-display {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-size: 0.85rem;
+        color: var(--grey);
+    }
+
+    /* MAIN CONTENT */
+    main {
+        padding: 1.5rem;
+    }
+
+    .head-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+
+    .head-title .left h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        column-gap: 0.5rem;
+    }
+
+    .breadcrumb a {
+        color: var(--grey);
+        font-size: 0.85rem;
+    }
+
+    .breadcrumb a.active {
+        color: var(--blue);
+    }
+
+    .btn-download {
+        height: 36px;
+        padding: 0 1rem;
+        border-radius: 8px;
+        background-color: var(--blue);
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        column-gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-download:hover {
+        background-color: #1b76f5;
+    }
+
+    .btn-download i {
+        font-size: 1.25rem;
+    }
+
+    /* STATUS CONTAINER */
+    .status-container {
+        background-color: var(--white);
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+
+    .status-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .status-header h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        column-gap: 1rem;
+    }
+
+    .badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge.safe {
+        background-color: #e6f7ed;
+        color: var(--green);
+    }
+
+    .badge.warning {
+        background-color: #fff4e6;
+        color: var(--yellow);
+    }
+
+    .badge.danger {
+        background-color: #ffede9;
+        color: var(--red);
+    }
+
+    #last-update {
+        color: var(--grey);
+        font-size: 0.85rem;
+    }
+
+    /* SENSOR CARDS */
+    .sensor-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .sensor-card {
+        background-color: var(--white);
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .sensor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sensor-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+
+    #mq2-card .sensor-icon {
+        background-color: #e6f7ed;
+        color: var(--green);
+    }
+
+    #mq6-card .sensor-icon {
+        background-color: #e6f2ff;
+        color: var(--blue);
+    }
+
+    #flame-card .sensor-icon {
+        background-color: #ffede9;
+        color: var(--red);
+    }
+
+    #temp-card .sensor-icon {
+        background-color: #fff4e6;
+        color: var(--yellow);
+    }
+
+    #humidity-card .sensor-icon {
+        background-color: #eef1f5;
+        color: var(--grey);
+    }
+
+    .sensor-info {
+        flex-grow: 1;
+    }
+
+    .sensor-info h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .sensor-description {
+        font-size: 0.8rem;
+        color: var(--grey);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .sensor-value {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 0.5rem;
+    }
+
+    .sensor-value h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-right: 0.35rem;
+    }
+
+    .unit {
+        font-size: 0.8rem;
+        color: var(--grey);
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+
+    .status-badge.safe {
+        color: var(--green);
+    }
+
+    .status-badge.warning {
+        color: var(--yellow);
+    }
+
+    .status-badge.danger {
+        color: var(--red);
+    }
+
+    .status-badge i {
+        margin-right: 0.25rem;
+    }
+
+    /* ACTIVITY LOGS */
+    .activity-logs {
+        background-color: var(--white);
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .filter-options {
+        display: flex;
+        column-gap: 1rem;
+    }
+
+    .filter-options select {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--light);
+        background-color: var(--white);
+        font-size: 0.85rem;
+        color: var(--dark);
+        cursor: pointer;
+    }
+
+    .log-table-container {
+        overflow-x: auto;
+    }
+
+    .log-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .log-table th, .log-table td {
+        padding: 1rem;
+        text-align: left;
+    }
+
+    .log-table th {
+        font-weight: 600;
+        color: var(--dark);
+        background-color: #f9fafb;
+    }
+
+    .log-table tbody tr {
+        border-bottom: 1px solid var(--light);
+    }
+
+    .log-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .btn-detail {
+        padding: 0.35rem 0.75rem;
+        background-color: var(--light);
+        color: var(--dark);
+        border-radius: 8px;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-detail:hover {
+        background-color: var(--blue);
+        color: var(--white);
+    }
+
+    /* PAGINATION */
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        column-gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .pagination a {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background-color: var(--light);
+        color: var(--white);
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+
+    .pagination a.active, .pagination a:hover {
+        background-color: var(--blue);
+        color: var(--white);
+    }
+
+    
+
+    #overall-status.danger {
+        animation: pulse 1.5s infinite;
+    }
+</style>
+
+<script>
+    
+    // Example function to simulate sensor status updates
+    function simulateStatusChanges() {
+        // This would be replaced with real data in a production environment
+        const sensors = ['mq2', 'mq6', 'flame', 'temp', 'humidity'];
+        const statuses = ['safe', 'warning', 'danger'];
+        
+        // Randomly select a sensor to update
+        const sensorToUpdate = sensors[Math.floor(Math.random() * sensors.length)];
+        const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+        
+        // In a real application, this would update based on actual sensor readings
+        console.log(`Updating ${sensorToUpdate} to ${newStatus}`);
+    }
+    
+    // Simulate status changes every 10 seconds (just for demo)
+    // setInterval(simulateStatusChanges, 10000);
+</script>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistem Monitoring Kebocoran Gas{% endblock %}
+
+{% block content %}
+
+<!-- MAIN -->
+<section id="content">
+    <main>
+        <div class="head-title">
+            <div class="left">
+                <h1>Dashboard</h1>
+            </div>
+        </div>
+        <div>
+            <h3>Status : <span id="status-prediksi">Memuat...</span></h3>
+        </div>
+        <ul class="box-info">
+            <li>
+                <span class="text">
+                    <p>MQ-2 /ppm</p>
+                    <h3 id="MQ2_PPM">-</h3>
+                </span>
+            </li>
+            <li>
+                <span class="text">
+                    <p>MQ-6 /ppm</p>
+                    <h3 id="MQ6_PPM">-</h3>
+                </span>
+            </li>
+            <li>
+                <span class="text">
+                    <p>Flame</p>
+                    <h3 id="Flame">-</h3>
+                </span>
+            </li>
+            <li>
+                <span class="text">
+                    <p>Suhu</p>
+                    <h3 id="Suhu">-</h3>
+                </span>
+            </li>
+            <li>
+                <span class="text">
+                    <p>Kelembapan</p>
+                    <h3 id="Kelembapan">-</h3>
+                </span>
+            </li>
+        </ul>
+    </main>
+</section>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    :root {
+        --blue: #2a85ff;
+        --yellow: #ffad49;
+        --red: #ff6a55;
+        --green: #83bf6e;
+        --dark: #1a2b3c;
+        --grey: #8a94a6;
+        --light: #eef1f5;
+        --white: #ffffff;
+    }
+
+    body {
+        background-color: #eeeeee;
+    }
+
+    a {
+        text-decoration: none;
+    }
+
+    .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.5rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        background-color: var(--white);
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 100;
+    }
+
+    .toggle-sidebar {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--dark);
+    }
+
+    .nav-title span {
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .time-display {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-size: 0.85rem;
+        color: var(--grey);
+    }
+
+    #status-prediksi {
+        font-weight: bold;
+    }
+
+    .text-green {
+        color: green;
+    }
+
+    .text-orange {
+        color: orange;
+    }
+
+    .text-red {
+        color: red;
+    }
+</style>
+
+<script>
+async function fetchLatestData() {
+    try {
+        console.log("Mencoba mengambil data sensor...", new Date().toLocaleTimeString());
+        
+        const response = await fetch('/api/data/latest');
+        console.log("Status response:", response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Log lengkap untuk debugging
+        console.log("Data diterima dari API:", JSON.stringify(data));
+        console.log("Data prediksi ML:", data.prediksi_ml);
+
+        if (data) {
+            // Cek struktur data
+            if (data.error) {
+                console.error("Error dari API:", data.error);
+                document.getElementById('status-prediksi').textContent = "Error: " + data.error;
+                return;
+            }
+            
+            // Perbarui nilai sensor dengan penanganan error yang lebih baik
+            try {
+                // MQ2_PPM
+                let mq2Value = data.MQ2_PPM;
+                if (mq2Value !== undefined && mq2Value !== null) {
+                    // Pastikan nilai numerik sebelum menggunakan toFixed
+                    mq2Value = parseFloat(mq2Value);
+                    if (!isNaN(mq2Value)) {
+                        document.getElementById('MQ2_PPM').textContent = mq2Value.toFixed(2);
+                    } else {
+                        document.getElementById('MQ2_PPM').textContent = mq2Value;
+                    }
+                } else {
+                    document.getElementById('MQ2_PPM').textContent = '-';
+                }
+                
+                // MQ6_PPM
+                let mq6Value = data.MQ6_PPM;
+                if (mq6Value !== undefined && mq6Value !== null) {
+                    mq6Value = parseFloat(mq6Value);
+                    if (!isNaN(mq6Value)) {
+                        document.getElementById('MQ6_PPM').textContent = mq6Value.toFixed(2);
+                    } else {
+                        document.getElementById('MQ6_PPM').textContent = mq6Value;
+                    }
+                } else {
+                    document.getElementById('MQ6_PPM').textContent = '-';
+                }
+                
+                // Flame
+                if (data.Flame !== undefined) {
+                    document.getElementById('Flame').textContent = data.Flame === 1 ? "TERDETEKSI" : "TIDAK";
+                } else {
+                    document.getElementById('Flame').textContent = '-';
+                }
+                
+                // Suhu
+                let suhuValue = data.Suhu;
+                if (suhuValue !== undefined && suhuValue !== null) {
+                    suhuValue = parseFloat(suhuValue);
+                    if (!isNaN(suhuValue)) {
+                        document.getElementById('Suhu').textContent = suhuValue.toFixed(1) + "°C";
+                    } else {
+                        document.getElementById('Suhu').textContent = suhuValue;
+                    }
+                } else {
+                    document.getElementById('Suhu').textContent = '-';
+                }
+                
+                // Kelembapan
+                let kelembapanValue = data.Kelembapan;
+                if (kelembapanValue !== undefined && kelembapanValue !== null) {
+                    kelembapanValue = parseFloat(kelembapanValue);
+                    if (!isNaN(kelembapanValue)) {
+                        document.getElementById('Kelembapan').textContent = kelembapanValue.toFixed(1) + "%";
+                    } else {
+                        document.getElementById('Kelembapan').textContent = kelembapanValue;
+                    }
+                } else {
+                    document.getElementById('Kelembapan').textContent = '-';
+                }
+            } catch (formatError) {
+                console.error("Error saat memformat data:", formatError);
+            }
+
+            // Perbarui status dengan penanganan error yang lebih baik
+            try {
+                const statusEl = document.getElementById('status-prediksi');
+                let status = "Tidak diketahui";
+                
+                // Prioritaskan hasil prediksi ML
+                if (data.prediksi_ml && data.prediksi_ml.kondisi) {
+                    status = data.prediksi_ml.kondisi.toLowerCase();
+                    console.log("Menggunakan status dari prediksi_ml:", status);
+                } else if (data.Klasifikasi) { 
+                    status = data.Klasifikasi.toLowerCase();
+                    console.log("Menggunakan status dari Klasifikasi:", status);
+                } else if (data.klasifikasi) {
+                    status = data.klasifikasi.toLowerCase();
+                    console.log("Menggunakan status dari klasifikasi:", status);
+                }
+
+                statusEl.textContent = status.toUpperCase();
+                statusEl.className = ""; // reset kelas
+
+                if (status === "aman") {
+                    statusEl.classList.add("text-green");
+                } else if (status === "waspada") {
+                    statusEl.classList.add("text-orange");
+                } else if (status === "bahaya") {
+                    statusEl.classList.add("text-red");
+                }
+            } catch (statusError) {
+                console.error("Error saat memperbarui status:", statusError);
+            }
+            
+            console.log("Data berhasil diperbarui pada:", new Date().toLocaleTimeString());
+        } else {
+            console.error("Data kosong dari API");
+            document.getElementById('status-prediksi').textContent = "Tidak ada data";
+        }
+    } catch (error) {
+        console.error("Gagal mengambil data sensor:", error);
+        document.getElementById('status-prediksi').textContent = "Gagal mengambil data";
+    }
+}
+
+// Pastikan interval berjalan dengan menggunakan fungsi rekursif dengan setTimeout
+function startDataPolling() {
+    fetchLatestData()
+        .then(() => {
+            console.log("Menjadwalkan pembaruan berikutnya dalam 5 detik...");
+            setTimeout(startDataPolling, 5000);
+        })
+        .catch(error => {
+            console.error("Error dalam polling data:", error);
+            console.log("Mencoba lagi dalam 5 detik...");
+            setTimeout(startDataPolling, 5000);
+        });
+}
+
+// Event listener saat dokumen dimuat
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Halaman dashboard dimuat, memulai polling data...");
+    // Mulai polling data segera
+    startDataPolling();
+});
+</script>
+
+{% endblock %}
