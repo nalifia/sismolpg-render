@@ -28,10 +28,10 @@ app_dir = os.path.dirname(os.path.abspath(__file__))
 def init_firebase():
     """Inisialisasi Firebase dengan error handling"""
     try:
-        cred_path = "/etc/secrets/deteksikebocorangas-1917b-firebase-adminsdk-fbsvc-9f3b405891.json"
+        cred_path = "/etc/secrets/sismolpg-firebase-adminsdk-fbsvc-551767a347.json"
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://deteksikebocorangas-1917b-default-rtdb.asia-southeast1.firebasedatabase.app/'
+            'databaseURL': 'https://sismolpg-default-rtdb.asia-southeast1.firebasedatabase.app/'
         })
         logger.info("Firebase berhasil diinisialisasi")
     except Exception as e:
@@ -99,7 +99,7 @@ def send_telegram_message(message):
         print(f"❌ Gagal kirim pesan: {e}")
 
 
-ESP32_BUZZER_URL = "http://192.168.1.5/buzzer"  # Ganti <ESP32_IP> dengan IP ESP32 Anda
+ESP32_BUZZER_URL = "http://http://192.168.102.106/buzzer"  # Ganti id <ESP32_IP>
 
 def send_buzzer_command(status):
     """Mengirimkan perintah untuk menyalakan buzzer di ESP32"""
